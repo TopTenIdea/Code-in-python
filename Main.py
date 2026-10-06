@@ -1,4 +1,4 @@
-
+import math
 code = ""
 codepcs = code.splitlines()
 
@@ -10,25 +10,51 @@ for codepart in codepcs:
         localpart = codepart.split()
         currvar = localpart[1]
         currvartoset = localpart[2]
-        if currvar.isdecimal():#check that the variable we are setting isnt a decimal value
-            raise Exception("Can not set decimal to a value")
+        if currvar.isdigit():#check that the variable we are setting isnt a decimal value
+            raise Exception("Cannot set decimal to a value")
         if not currvar.isascii():#check that the variable we are setting is legal
-            raise Exception("Can not use a non ASCII value as variable")
+            raise Exception("Cannot use a non-ASCII value as variable")
         if not currvartoset.isascii():#check that the value we are setting is legal
-            raise Exception("Can not set a variable to a non ASCII value")
+            raise Exception("Cannot set a variable to a non-ASCII value")
         if currvartoset in vars:
             currvartoset = vars[currvartoset]
-        if currvartoset.isdecimal():#if its a decimal convert to float
-            currvartoset = float(currvartoset)
+        if isinstance(currvartoset, str):
+            try:
+                currvartoset = float(currvartoset)
+            except ValueError:
+                pass
         vars[currvar] = currvartoset
     if codepart.startswith("INC"):#increment
         localpart = codepart.split()
         currvartoinc = localpart[1]
         incby = localpart[2]
-        if not currvartoinc in vars:#make sure that we are incrementing something that exists
+        if currvartoinc not in vars:#make sure that we are incrementing something that exists
             raise Exception("Variable to increment does not exist")
-        if vars[currvartoinc].isdecimal() and not incby.isdecimal():#we can incrment a string by a string and with a "decimal" using concatenation and we can incrememnt a decimal value with another decimal but we cannot incrment a decimal by a string
-            raise Exception("Can not increment a decimal value by a non-decimal value")
-        if vars[currvartoinc].isdecimal():#change to a float if we are incrmemnting a decimal value
-            incby = float(incby)
-        vars[currvartoinc]+=incby
+        if isinstance(vars[currvartoinc], (int, float)):
+            if incby in vars:
+                if not isinstance(vars[incby], (int, float)):
+                    raise Exception("Cannot increment a decimal value by a non-decimal value")
+                vars[currvartoinc] = float(vars[currvartoinc]) + float(vars[incby])
+            else:
+                try:
+                    vars[currvartoinc] = float(vars[currvartoinc]) + float(incby)
+                except ValueError:
+                    raise Exception("Cannot increment a decimal value by a non-decimal value")
+        else:
+            if incby in vars:
+                incby = vars[incby]
+            if not isinstance(incby, str):
+                raise Exception("Cannot increment a decimal value by a non-decimal value")
+            vars[currvartoinc] += incby
+    if codepart.startswith("SIN"):#sin function on input in radians
+        localpart = codepart.split()
+        currvartosin = localpart[1]
+        if not isinstance(vars[currvartosin], (int, float)):#check that its a decimal value
+            raise Exception("Cannot use non-decimal input to sin function")
+        vars[currvartosin] = math.sin(float(vars[currvartosin]))
+    if codepart.startswith("COS"):#cos function on input in radians
+        localpart = codepart.split()
+        currvartosin = localpart[1]
+        if not isinstance(vars[currvartosin], (int, float)):#check that its a decimal value
+            raise Exception("Cannot use non-decimal input to cos function")
+        vars[currvartosin] = math.cos(float(vars[currvartosin]))
